@@ -43,7 +43,7 @@ def convert(rpath):
             if j:
                 imagelist.append(0)
             else:
-                imagelist.append(1)
+                imagelist.append(255)
     return imagelist
 
 parser = argparse.ArgumentParser(description='Neuronet for reading numbers from images')
@@ -52,16 +52,19 @@ parser.add_argument('Path', type=str, help='Path to predit from')
 args = parser.parse_args()
 
 model = Sequential()
-model.add(Reshape((28, 28),input_shape=(1024,)))
-model.add(LSTM(100, consume_less='cpu'))
+model.add(Reshape((28,28),input_shape=(28*28,)))
+model.add(LSTM(30, consume_less='gpu', input_shape = (28, 28)))
+model.add(Dense(output_dim=30))
+model.add(Dense(output_dim=30))
+model.add(Dense(output_dim=20))
 model.add(Dense(output_dim=1))
-model.add(Activation("sigmoid"))
+model.add(Activation("relu"))
 
 model.load_weights('Weights.hd5')
 
 data = np.array([convert(args.Path)])
 
-print(math.trunc(int(model.predict(data)*10+0.5))-1)
+print(float(model.predict(data)))
 
 
 
