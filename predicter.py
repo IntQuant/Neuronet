@@ -15,14 +15,15 @@ import numpy as np
 from pyglet import image
 
 def getIntensityMap(rpath):
-    pic = image.load(rpath).get_image_data()    
-    picformat = 'RGBA'
+    pic = image.load(rpath).get_image_data()        
+    picformat = 'RGBA' #ABGR
     pitch = pic.width * len(picformat)
     pixels = pic.get_data(picformat, pitch)
+    pixels = bytes(reversed(pixels))
     arr = np.empty((pic.width, pic.height))
     for ij in range(len(pixels)//4):
         i = ij*4
-        arr[ij//pic.height][ij%pic.height] = (pixels[i]+pixels[i+1]+pixels[i+2]+1) * pixels[i+3]    
+        arr[ij//pic.height][ij%pic.height] = (pixels[i+1]+pixels[i+2]+pixels[i+3]+1) * pixels[i]    
     return (pic.width, pic.height, arr)
 def convert(rpath):    
     IM = getIntensityMap(rpath)
@@ -35,15 +36,12 @@ def convert(rpath):
     for i in range(width):
         for j in range(height):
             arrr[math.floor(i/dwidth)][math.floor(j/dheight)] += arr[i][j]
-    treshold = arrr.sum() / (28*28) 
-    arrr = arrr > treshold
+    treshold = arrr.sum() / (28*28)     
+    arrr = arrr / (dwidth*dheight)
     imagelist = []
     for i in arrr:
-        for j in i:
-            if j:
-                imagelist.append(0)
-            else:
-                imagelist.append(255)
+        for j in i:            
+                imagelist.append(max(0, j))
     return imagelist
 
 parser = argparse.ArgumentParser(description='Neuronet for reading numbers from images')
@@ -53,14 +51,18 @@ args = parser.parse_args()
 
 model = Sequential()
 model.add(Reshape((28,28),input_shape=(28*28,)))
-model.add(LSTM(30, consume_less='gpu', input_shape = (28, 28)))
-model.add(Dense(output_dim=30))
-model.add(Dense(output_dim=30))
-model.add(Dense(output_dim=20))
+model.add(LSTM(150, consume_less='gpu', input_shape = (28, 28)))
+model.add(Dense(output_dim=50))
+model.add(Activation("relu"))
 model.add(Dense(output_dim=1))
 model.add(Activation("relu"))
 
 model.load_weights('Weights.hd5')
+
+for e, i in enumerate((convert(args.Path))):
+	if e%28==0:
+		print()
+	print(int(i), end='\t')
 
 data = np.array([convert(args.Path)])
 

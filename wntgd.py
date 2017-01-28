@@ -19,6 +19,8 @@ np.random.seed(seed)
 
 
 
+
+
 testsx = X_train
 testsy = y_train
 
@@ -29,17 +31,18 @@ testsx = np.array(testsx)
 
 
 model = Sequential()
-model.add(LSTM(100, consume_less='gpu', input_shape = (28, 28)))
-model.add(Dense(output_dim=100))
-model.add(Activation("relu"))
-model.add(Dense(output_dim=50))
-model.add(Activation("relu"))
+model.add(LSTM(150, consume_less='gpu', input_shape = (28, 28)))
 model.add(Dense(output_dim=50))
 model.add(Activation("relu"))
 model.add(Dense(output_dim=1))
 model.add(Activation("relu"))
 
-#model.load_weights('Weights.hd5')
+model.load_weights('Weights.hd5')
+
+fstartEpoch = int(input('Start epoch: '))
+fstageepoch = int(input('fstageepoch: ')) + fstartEpoch
+sstartEpoch = fstageepoch
+sstageepoch = int(input('sstageepoch: ')) + sstartEpoch
 
 model.compile(
              loss='mean_squared_error',
@@ -49,11 +52,14 @@ model.compile(
 history = model.fit(
     x=testsx,
     y=testsy,
-    nb_epoch=50,
+    nb_epoch=fstageepoch,
+    initial_epoch=fstartEpoch,
     verbose=1,
     validation_split=0.01,
-    batch_size=64
+    batch_size=10
 )
+
+model.save_weights('Weights2.hd5')
 
 for layer in model.layers[1:3]:
     layer.trainable = False
@@ -62,7 +68,7 @@ print('-'*50)
 csgd = SGD(lr=1e-4, momentum=0.9)
 
 model.compile(
-             loss='mean_squared_error',
+             loss='mean_absolute_error',
              optimizer=csgd,
              )
 
@@ -70,11 +76,11 @@ model.compile(
 history = model.fit(	
     x=testsx,
     y=testsy,
-    nb_epoch=150,
-    initial_epoch=50,
+    nb_epoch=sstageepoch,
+    initial_epoch=sstartEpoch,
     verbose=1,
     validation_split=0.01,
-    batch_size=64
+    batch_size=8
 )
 
 
