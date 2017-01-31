@@ -12,6 +12,7 @@ from keras.layers.recurrent import LSTM
 from keras.layers.convolutional import Convolution1D
 from keras.utils.np_utils import to_categorical
 import numpy as np
+#from skimage import io
 from pyglet import image
 
 def getIntensityMap(rpath):
@@ -25,7 +26,7 @@ def getIntensityMap(rpath):
         i = ij*4
         arr[ij//pic.height][ij%pic.height] = (pixels[i+1]+pixels[i+2]+pixels[i+3]+1) * pixels[i]    
     return (pic.width, pic.height, arr)
-def convert(rpath):    
+def convert(rpath):
     IM = getIntensityMap(rpath)
     width = IM[0]
     height = IM[1]
@@ -36,7 +37,7 @@ def convert(rpath):
     for i in range(width):
         for j in range(height):
             arrr[math.floor(i/dwidth)][math.floor(j/dheight)] += arr[i][j]
-    treshold = arrr.sum() / (28*28)     
+    treshold = arrr.sum() / (28*28) / (255*3*4)
     arrr = arrr / (dwidth*dheight)
     imagelist = []
     for i in arrr:
@@ -45,7 +46,7 @@ def convert(rpath):
     return imagelist
 
 parser = argparse.ArgumentParser(description='Neuronet for reading numbers from images')
-parser.add_argument('Path', type=str, help='Path to predit from')
+parser.add_argument('Path', type=str, help='Path to predict from')
 
 args = parser.parse_args()
 
@@ -59,16 +60,19 @@ model.add(Activation("relu"))
 
 model.load_weights('Weights.hd5')
 
-for e, i in enumerate((convert(args.Path))):
-	if e%28==0:
-		print()
-	print(int(i), end='\t')
-
 data = np.array([convert(args.Path)])
 
-print(float(model.predict(data)))
+#io.use_plugin('matplotlib')
 
+result = float(model.predict(data))
+intresult = int(result+0.5)
 
+resrange = abs(intresult - result)
+percvalid = 100 - ((resrange / 0.5) * 100)
+
+print('Result', intresult, 'Validness', percvalid, sep='\n')
+
+#io.show()
 
 
 
