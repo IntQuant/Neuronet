@@ -18,9 +18,9 @@ seed = 7
 np.random.seed(seed)
 
 model = Sequential()
-model.add(LSTM(150, consume_less='gpu', input_shape = (28, 28)))
-model.add(Dense(output_dim=50))
-model.add(Activation("relu"))
+model.add(Flatten(input_shape = (28, 28)))
+model.add(Dense(output_dim=28*4))
+model.add(Activation("sigmoid"))
 model.add(Dense(output_dim=1))
 model.add(Activation("relu"))
 print('Loading weights')
@@ -29,13 +29,38 @@ print('Predicting')
 predicted = model.predict(X_test)
 print('Calculating perfomance')
 perfomance = [0]*10
+irrperf = [0]*10
 numcount = [0]*10
 totalperc = 0
 for answer, predicted in zip(y_test, predicted):
 	if int(float(predicted)+0.5) == int(answer):
 		perfomance[answer] += 1
+	else:
+		irrperf[answer] += 1
 	numcount[answer] += 1
+print('Invalid')
 
+print('number',
+      'valid',
+      '---',
+      'all',
+      'perc',
+      '%',
+      sep='\t'
+     )
+
+irrsum = sum(irrperf)
+for i, irr in enumerate(irrperf):
+	print(str(i)+' -->',
+	      irr,
+	      'of',
+	      'all',
+	      int(irr/irrsum*1000)/10,
+	      '%',
+	      sep='\t'
+	      )
+
+print('Valid')
 for i, predansw in enumerate(zip(perfomance, numcount)):
 	pred = predansw[0]
 	answ = predansw[1]
@@ -47,5 +72,10 @@ for i, predansw in enumerate(zip(perfomance, numcount)):
 	      numcount[i],
 	      perc,'%',
 	      sep='\t'
-	      )
+	      )	      
 print('Total:',totalperc/10,'%')
+
+with open('History', 'a') as history:
+    print(totalperc/10, file=history)
+
+
