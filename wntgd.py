@@ -14,21 +14,30 @@ currentbath = 0
 
 testsx, testsy = Prepare.get()
 
-print(model.predict(testsx[0].reshape(1, 4, 32, 32)))
+model.load_weights('Weights.hd5')
+
+print(model.predict(testsx[0].reshape(1, 28, 28, 1)))
 
 history = model.fit(
      x=testsx,
      y=testsy,
-     nb_epoch=20,
+     initial_epoch=90,
+     nb_epoch=100,
      verbose=1,     
      validation_split=0.01,
-     batch_size=10
+     batch_size=32,
+     shuffle=True,
+     
  )
  
-print(model.predict(testsx[0].reshape(1, 4, 32, 32)))
+print(model.predict(testsx[0].reshape(1, 28, 28, 1)))
 
 model.save_weights('Weights.hd5')
 
+ev = model.evaluate(testsx, testsy)
+
+print('Score:', ev[0])
+print('Acc:  ', ev[1])
 
 
 
