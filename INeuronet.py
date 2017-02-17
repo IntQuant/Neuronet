@@ -19,29 +19,31 @@ class GetModel:
 		img_cols=28
 		nb_classes=10
 		
-		filters = 64
 		
-		nb_conv = 3
-		nb_pool = 2
+		
+		
+		
 		
 		model = Sequential()
 		
-		model.add(Convolution2D(filters, nb_conv, nb_conv, border_mode='valid', input_shape=(img_rows, img_cols, 1)))
+		model.add(Convolution2D(32, 3, 3, input_shape=(28, 28, 1)))
 		model.add(Activation('relu'))
-		model.add(Convolution2D(filters, nb_conv, nb_conv))
+		model.add(MaxPooling2D(pool_size=(2, 2)))
+		model.add(Convolution2D(32, 3, 3))
 		model.add(Activation('relu'))
-		model.add(MaxPooling2D(pool_size=(nb_pool, nb_pool)))
-		model.add(Dropout(0.25))
+		model.add(MaxPooling2D(pool_size=(2, 2)))
 		
-		model.add(Flatten())	
-		model.add(Dense(256))
+		model.add(Flatten())  # this converts our 3D feature maps to 1D feature vectors
+		model.add(Dense(64))
 		model.add(Activation('relu'))
 		model.add(Dropout(0.5))
-
-		model.add(Dense(nb_classes))
+		model.add(Dense(64))
+		model.add(Activation('relu'))
+		model.add(Dropout(0.5))
+		model.add(Dense(10))
 		model.add(Activation('softmax'))
 
-		model.compile(loss='categorical_crossentropy',optimizer='adadelta',metrics=['accuracy'],								 
+		model.compile(loss='categorical_crossentropy',optimizer='rmsprop',metrics=['accuracy'],								 
 								 )
 		
 		plot(model, to_file='model.png')
