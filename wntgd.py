@@ -7,6 +7,7 @@ import random
 from INeuronet import GetModel
 from PrepImg import Prepare
 from keras.optimizers import SGD
+from keras.callbacks import ReduceLROnPlateau, CSVLogger, TensorBoard
 from keras.preprocessing.image import ImageDataGenerator as datagenc
 
 seed = 7
@@ -19,7 +20,15 @@ model = GetModel.getmodel()
 currentbath = 0
 
 #Получение датасета
-testsx, testsy = Prepare.get()
+testsx, testsy , xtest, ytest= Prepare.get()
+
+rlr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
+                  patience=2, min_lr=1e-7)
+csvlog = CSVLogger('training.csv', append=True)
+tb = TensorBoard()
+
+callb = [rlr, csvlog, tb]
+
 
 
 #Генератор изображений
@@ -31,49 +40,18 @@ datagen = datagenc(
 )
 
 
-def dataprep():
-	global datagen
-	global testsx
-	global testsy
-	gen = datagen.flow(testsx, testsy, batch_size = 128)
-	
-	while True:
-		bit = random.getrandbits(1) == 1
-		#bit = False
-		if bit:
-			#print('Using generator')
-			(testx, testy) = next(gen)
-			
-			inp = {'input_1':testx}
-			out = {'classif':testy, 'isclass':np.array([1]*128)}
-			if out['classif'].shape == (128, 10):
-				yield (inp, out)
-			
-		else:
-			#print('Creating stm random')
-			rand = np.random.random((128, 28, 28, 1))
-			class_out = np.array([[0]*10]*128)
-			
-			inp = {'input_1':rand}
-			out = {'classif':class_out, 'isclass':np.array([0]*128)}
-			yield (inp, out)
 
-sh1 = sh2 = [128, 28, 28, 1]
+gen = datagen.flow(testsx, testsy, batch_size = 128)
 
-
-
-
-
-model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'],optimizer='rmsprop', loss_weights=[1., 0.2])
-
-print(len(model.input_names),model.internal_input_shapes)
-print(model.output_names)
+model.compile(loss='categorical_crossentropy',optimizer='rmsprop')
 
 history = model.fit_generator(
-     generator = dataprep(),
+     generator = gen,
      samples_per_epoch = 12800,
-     nb_epoch=10,
+     nb_epoch=20,
      verbose=1,
+     validation_data = (xtest, ytest),
+     callbacks = callb
  )
  
 #Делаем первый слой не тренеруемым: это позволяет сделать fine-tuning 
@@ -82,13 +60,16 @@ model.layers[0].trainable = False
 #Используем замедленный оптимизатор
 csgd = SGD(lr=1e-4, momentum=0.9)
 
-model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'],optimizer=csgd , loss_weights=[1., 0.5])
+model.compile(loss='categorical_crossentropy',optimizer=csgd)
 
 history = model.fit_generator(
-     generator = dataprep(),
+     generator = gen,
      samples_per_epoch = 12800,
-     nb_epoch=17,
+     validation_data = (xtest, ytest),
+     nb_epoch=60,
+     initial_epoch=20,
      verbose=1,
+     callbacks = callb
  )
 
 
