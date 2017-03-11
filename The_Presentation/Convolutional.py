@@ -1,4 +1,5 @@
 import os
+
 cwd = os.getcwd() + '/data/'
 
 class Conv():
@@ -29,8 +30,15 @@ class Conv():
         self.image = image.pixels
         self.xsize = image.width 
         self.ysize = image.height
+        
+        self.conv = [[None]*image.height for i in range(image.width)]
+        
         print('Done')
-        self.channels = 1
+        
+    def Convolve_all(self):
+        for i in range(self.xsize):
+            for j in range(self.ysize):
+                self.Convolve(i, j)
     def get(self, x, y):
         pos = x + y * self.xsize
         return self.image[pos]
@@ -74,7 +82,11 @@ class Conv():
                 
     def Convolve(self, i, j, mode=False):
         offset = 0
-        
+        if self.conv[i][j] is not None:
+            if mode:
+                return color(*self.conv[i][j])
+            else:
+                return sum(self.conv[i][j])/3
         convr = [
         red(self.get(i, j)) * self.kernel[1][1]+offset,
         red(self.get(i+1, j)) * self.kernel[2][1]+offset,
@@ -108,6 +120,7 @@ class Conv():
         blue(self.get(i+1, j-1)) * self.kernel[2][0]+offset,
         blue(self.get(i-1, j+1)) * self.kernel[0][2]+offset,
         ]
+        self.conv[i][j] = [sum(convr), sum(convg), sum(convb)]
         if mode:
             return color(sum(convr), sum(convg), sum(convb))
         else:
